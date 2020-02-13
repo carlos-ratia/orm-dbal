@@ -8,7 +8,8 @@
         "doctrine/dbal": "^2.10"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.0"
+        "phpunit/phpunit": "^9.0",
+        "symfony/dotenv": "^5.0"
     },
     "license": "MIT",
     "authors": [
@@ -26,9 +27,15 @@
         }
     },
     "autoload-dev": {
+        "classmap": [
+            "test/"
+        ],
         "psr-4": {
             "Tests\\Cratia\\ORM\\": "tests/"
         }
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "scripts": {
+        "test": "phpunit"
+    }
 }

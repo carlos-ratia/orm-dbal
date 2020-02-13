@@ -2,8 +2,7 @@
 declare(strict_types=1);
 
 
-namespace  Cratia\ORM\DBAL;
-
+namespace Cratia\ORM\DBAL;
 
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
 use Cratia\ORM\DQL\Interfaces\ISql;

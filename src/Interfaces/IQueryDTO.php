@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace  Cratia\ORM\DBAL\Interfaces;
+namespace Cratia\ORM\DBAL\Interfaces;
 
 use Cratia\ORM\DQL\Interfaces\ISql;
 

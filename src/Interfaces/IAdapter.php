@@ -10,5 +10,11 @@ namespace Cratia\ORM\DBAL\Interfaces;
  */
 interface IAdapter
 {
+    /**
+     * @param string $sentence
+     * @param array $params
+     * @param array $types
+     * @return array
+     */
     public function query(string $sentence, array $params = [], array $types = []): array;
 }

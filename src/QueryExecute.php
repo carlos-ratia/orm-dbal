@@ -2,15 +2,18 @@
 declare(strict_types=1);
 
 
+namespace Cratia\ORM\DBAL;
+
+
 use Cratia\ORM\DBAL\Interfaces\IAdapter;
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
-use Cratia\ORM\DBAL\QueryDTO;
 use Cratia\ORM\DQL\Interfaces\IField;
 use Cratia\ORM\DQL\Interfaces\IQuery;
 use Cratia\ORM\DQL\Interfaces\ISql;
 use Cratia\ORM\DQL\Sql;
 use Cratia\Pipeline;
 use Doctrine\DBAL\DBALException;
+use Exception;
 
 /**
  * Class QueryExecute
