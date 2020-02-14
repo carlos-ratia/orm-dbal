@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ff7ed9dbe801d1e9eb2a5de7096760a7",
+    "content-hash": "4121e774ca520112c3ac17ffc77e92ab",
     "packages": [
         {
             "name": "cratia/orm-dql",
@@ -50,16 +50,16 @@
         },
         {
             "name": "cratia/pipeline",
-            "version": "0.5",
+            "version": "0.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/carlos-ratia/pipeline.git",
-                "reference": "a9b2b3ec4dcefdd518122a9d3219b635f596ae1d"
+                "reference": "854936f2b0a14496f392de2b2806178b76b95e28"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/carlos-ratia/pipeline/zipball/a9b2b3ec4dcefdd518122a9d3219b635f596ae1d",
-                "reference": "a9b2b3ec4dcefdd518122a9d3219b635f596ae1d",
+                "url": "https://api.github.com/repos/carlos-ratia/pipeline/zipball/854936f2b0a14496f392de2b2806178b76b95e28",
+                "reference": "854936f2b0a14496f392de2b2806178b76b95e28",
                 "shasum": ""
             },
             "require": {
@@ -86,7 +86,7 @@
             ],
             "description": "A plug and play pipeline pattern implementations.",
             "homepage": "https://github.com/carlos-ratia/pipeline",
-            "time": "2020-02-11T20:41:54+00:00"
+            "time": "2020-02-13T19:53:42+00:00"
         },
         {
             "name": "doctrine/cache",
@@ -1933,16 +1933,16 @@
         },
         {
             "name": "webmozart/assert",
-            "version": "1.6.0",
+            "version": "1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/webmozart/assert.git",
-                "reference": "573381c0a64f155a0d9a23f4b0c797194805b925"
+                "reference": "aed98a490f9a8f78468232db345ab9cf606cf598"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webmozart/assert/zipball/573381c0a64f155a0d9a23f4b0c797194805b925",
-                "reference": "573381c0a64f155a0d9a23f4b0c797194805b925",
+                "url": "https://api.github.com/repos/webmozart/assert/zipball/aed98a490f9a8f78468232db345ab9cf606cf598",
+                "reference": "aed98a490f9a8f78468232db345ab9cf606cf598",
                 "shasum": ""
             },
             "require": {
@@ -1977,7 +1977,7 @@
                 "check",
                 "validate"
             ],
-            "time": "2019-11-24T13:36:37+00:00"
+            "time": "2020-02-14T12:15:55+00:00"
         }
     ],
     "aliases": [],
