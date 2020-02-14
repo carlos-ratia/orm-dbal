@@ -3,8 +3,8 @@
     "description": "Database abstraction layer (DBAL) for execute Query based on https://www.doctrine-project.org/projects/dbal.html",
     "type": "library",
     "require": {
-        "cratia/orm-dql": "^0.1.0",
-        "cratia/pipeline": "^0.7.0",
+        "cratia/orm-dql": ">=0.1",
+        "cratia/pipeline": ">=0.7",
         "doctrine/dbal": "^2.10"
     },
     "require-dev": {

@@ -4,11 +4,11 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4121e774ca520112c3ac17ffc77e92ab",
+    "content-hash": "1adb130b16ae9d5b417f6cb45060200e",
     "packages": [
         {
             "name": "cratia/orm-dql",
-            "version": "0.1",
+            "version": "0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/carlos-ratia/orm-dql.git",
