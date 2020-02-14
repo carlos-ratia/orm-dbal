@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1adb130b16ae9d5b417f6cb45060200e",
+    "content-hash": "5998a7eae07d6e4e3ca2b0d29f0499cf",
     "packages": [
         {
             "name": "cratia/orm-dql",
@@ -1985,6 +1985,8 @@
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "php": ">=7.1"
+    },
     "platform-dev": []
 }

@@ -5,7 +5,8 @@
     "require": {
         "cratia/orm-dql": ">=0.1",
         "cratia/pipeline": ">=0.7",
-        "doctrine/dbal": "^2.10"
+        "doctrine/dbal": "^2.10",
+        "php": ">=7.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",
