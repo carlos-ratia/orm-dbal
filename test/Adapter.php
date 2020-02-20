@@ -48,17 +48,40 @@ class Adapter implements IAdapter
     }
 
     /**
-     * @param string $sql
+     * @param string $sentence
      * @param array $params
      * @param array $types
      * @return mixed[]
      * @throws DBALException
      */
-    public function query(string $sql, array $params = [], array $types = []): array
+    public function query(string $sentence, array $params = [], array $types = []): array
     {
+        $sentence = trim($sentence);
         return $this
             ->getConnection()
-            ->executeQuery($sql, $params, $types)
+            ->executeQuery($sentence, $params, $types)
             ->fetchAll(FetchMode::ASSOCIATIVE);
+    }
+
+    /**
+     * @param string $sentence
+     * @param array $params
+     * @param array $types
+     * @return int
+     * @throws DBALException
+     */
+    public function nonQuery(string $sentence, array $params = [], array $types = []): int
+    {
+        $sentence = trim($sentence);
+        $affectedRows = $this->getConnection()->executeUpdate($sentence, $params, $types);
+        return $affectedRows;
+    }
+
+    /**
+     * @return string
+     */
+    public function lastInsertId(): string
+    {
+        return $this->getConnection()->lastInsertId();
     }
 }
