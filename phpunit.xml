@@ -12,11 +12,11 @@
         convertWarningsToExceptions="true"
         processIsolation="false"
         stopOnFailure="false"
-        bootstrap="test/bootstrap.php"
+        bootstrap="tests/bootstrap.php"
 >
     <testsuites>
         <testsuite name="Test Suite">
-            <directory>./test/</directory>
+            <directory>./tests/</directory>
         </testsuite>
     </testsuites>
     <filter>

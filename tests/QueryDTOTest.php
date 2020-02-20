@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace Test\Cratia\ORM\DBAL;
+namespace Tests\Cratia\ORM\DBAL;
 
 
 use Cratia\ORM\DBAL\QueryDTO;

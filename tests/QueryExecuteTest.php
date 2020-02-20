@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace Test\Cratia\ORM\DBAL;
+namespace Tests\Cratia\ORM\DBAL;
 
 
 use Cratia\ORM\DBAL\QueryExecute;
@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase as PHPUnit_TestCase;
 
 /**
  * Class QueryExecuteTest
- * @package Test\Cratia\ORM\DBAL
+ * @package Tests\Cratia\ORM\DBAL
  */
 class QueryExecuteTest extends PHPUnit_TestCase
 {
@@ -103,7 +103,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $table1 = new Table($_ENV['TABLE_TEST'], "t");
         $field10 = Field::column($table1, "id"); //FIELD NO EXIST IN THE TABLE
         $field11 = Field::callback(
-            function (array $_) use ($error_msg) {
+            function () use ($error_msg) {
                 throw new Exception($error_msg);
             },
             'connection_id');
