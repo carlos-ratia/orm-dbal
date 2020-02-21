@@ -14,6 +14,7 @@ use Cratia\ORM\DQL\Sql;
 use Cratia\Pipeline;
 use Doctrine\DBAL\DBALException;
 use Exception;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class QueryExecute
@@ -25,9 +26,15 @@ class QueryExecute
      */
     private $adapter;
 
-    public function __construct(IAdapter $adapter)
+    /**
+     * @var LoggerInterface|null
+     */
+    private $logger;
+
+    public function __construct(IAdapter $adapter, LoggerInterface $logger = null)
     {
         $this->adapter = $adapter;
+        $this->logger = $logger;
     }
 
     /**
@@ -36,6 +43,24 @@ class QueryExecute
     public function getAdapter()
     {
         return $this->adapter;
+    }
+
+    /**
+     * @return LoggerInterface|null
+     */
+    public function getLogger(): ?LoggerInterface
+    {
+        return $this->logger;
+    }
+
+    /**
+     * @param LoggerInterface $logger
+     * @return QueryExecute
+     */
+    public function setLogger(LoggerInterface $logger): QueryExecute
+    {
+        $this->logger = $logger;
+        return $this;
     }
 
     /**
@@ -55,13 +80,16 @@ class QueryExecute
                 return $this->completeRawRows($rawRows, $query);
             })
             ->then(function (array $rows) use ($time, $sql) {
-                return $this->createDTO($rows, $sql, $time);
+                return $this->createDTO(IAdapter::FETCH, $rows, $sql, $time);
             })
             ->then(function (IQueryDTO $dto) use ($query) {
                 return $this->getFoundRows($dto, $query);
             })
             ->then(function (IQueryDTO $dto) use ($query) {
                 return $dto;
+            })
+            ->tap(function (IQueryDTO $dto) {
+                $this->log($dto);
             })
             ->catch(function (DBALException $e) {
                 throw $e;
@@ -131,16 +159,18 @@ class QueryExecute
     }
 
     /**
+     * @param string $king
      * @param array $rows
      * @param ISql $sql
      * @param float $time
      * @param string|int $affectedRows
      * @return IQueryDTO
      */
-    protected function createDTO(array $rows, ISql $sql, float $time, $affectedRows = ''): IQueryDTO
+    protected function createDTO(string $king, array $rows, ISql $sql, float $time, $affectedRows = ''): IQueryDTO
     {
         $dto = new QueryDTO();
         $dto
+            ->setKing($king)
             ->setRows($rows)
             ->setSql($sql)
             ->calculatePerformance($time)
@@ -180,11 +210,14 @@ class QueryExecute
             function () use ($king, $sql) {
                 return $this->_executeNonQuery($king, $sql);
             })
-            ->then(function ($affectedRows) use ($time, $sql) {
-                return $this->createDTO([], $sql, $time, $affectedRows);
+            ->then(function ($affectedRows) use ($king, $time, $sql) {
+                return $this->createDTO($king, [], $sql, $time, $affectedRows);
             })
             ->then(function (IQueryDTO $dto) {
                 return $dto;
+            })
+            ->tap(function (IQueryDTO $dto) {
+                $this->log($dto);
             })
             ->catch(function (DBALException $e) {
                 throw $e;
@@ -213,5 +246,18 @@ class QueryExecute
             throw $e;
         }
         return $affectedRows;
+    }
+
+    /**
+     * @param IQueryDTO $dto
+     */
+    protected function log(IQueryDTO $dto)
+    {
+        if (
+            !is_null($logger = $this->getLogger()) &&
+            ($logger instanceof LoggerInterface)
+        ) {
+            $logger->info(json_encode($dto));
+        }
     }
 }

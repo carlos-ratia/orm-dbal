@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cratia\ORM\DBAL\Interfaces;
 
 use Doctrine\DBAL\DBALException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Interface IAdapter
@@ -12,6 +13,7 @@ use Doctrine\DBAL\DBALException;
  */
 interface IAdapter
 {
+    const FETCH = 'IAdapter::FETCH';
     const CREATE = 'IAdapter::CREATE';
     const UPDATE = 'IAdapter::UPDATE';
     const DELETE = 'IAdapter::DELETE';
@@ -38,4 +40,9 @@ interface IAdapter
      * @return string
      */
     public function lastInsertId(): string;
+
+    /**
+     * @return LoggerInterface|null
+     */
+    public function getLogger(): ?LoggerInterface;
 }

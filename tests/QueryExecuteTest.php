@@ -15,7 +15,13 @@ use Cratia\ORM\DQL\Sql;
 use Cratia\ORM\DQL\Table;
 use Doctrine\DBAL\DBALException;
 use Exception;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Monolog\Processor\IntrospectionProcessor;
+use Monolog\Processor\MemoryUsageProcessor;
+use Monolog\Processor\UidProcessor;
 use PHPUnit\Framework\TestCase as PHPUnit_TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class QueryExecuteTest
@@ -24,7 +30,7 @@ use PHPUnit\Framework\TestCase as PHPUnit_TestCase;
 class QueryExecuteTest extends PHPUnit_TestCase
 {
     /**
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws DBALException
      */
     public function testExecute1()
     {
@@ -45,7 +51,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
     }
 
     /**
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws DBALException
      */
     public function testExecute2()
     {
@@ -73,7 +79,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
     }
 
     /**
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws DBALException
      */
     public function testExecute3()
     {
@@ -122,6 +128,9 @@ class QueryExecuteTest extends PHPUnit_TestCase
         (new QueryExecute(new Adapter()))->executeQuery($query);
     }
 
+    /**
+     * @throws DBALException
+     */
     public function testExecute5()
     {
         $sql = new Sql();
@@ -140,11 +149,14 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $this->assertEqualsCanonicalizing($sql, $dto->getSql());
     }
 
+    /**
+     * @throws DBALException
+     */
     public function testExecute6()
     {
         $this->expectException(DBALException::class);
         $sql = new Sql();
-        $sql->sentence = "INSERT INTO (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        $sql->sentence = "INSERT INTO (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (?, ?, ?, :network_params, ?, ?, ?, ?, ?, :error_exception);";
         $sql->params = ['inactive', 1, 'TEST', 'TEST', '2020-02-20 18:53:16', null, 0, null, null, 'TEST'];
 
         (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
@@ -166,5 +178,94 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
         $this->assertEqualsCanonicalizing($sql, $dto->getSql());
+    }
+
+    /**
+     * @throws DBALException
+     */
+    public function testExecute8()
+    {
+        $sql = new Sql();
+        $sql->sentence = "INSERT INTO {$_ENV['TABLE_TEST']} (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (:x1, :x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10);";
+        $sql->params = [
+            'x1' => 'inactive',
+            'x2' => true,
+            'x3' => 'TEST',
+            'x4' => 'TEST',
+            'x5' => '2020-02-20 18:53:16',
+            'x6' => null,
+            'x7' => 0,
+            'x8' => null,
+            'x9' => null,
+            'x10' => 'TEST'
+        ];
+
+        $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
+
+        $this->assertInstanceOf(IQueryDTO::class, $dto);
+        $this->assertIsString($dto->getAffectedRows());
+        $this->assertEqualsCanonicalizing(0, $dto->getCount());
+        $this->assertEqualsCanonicalizing(0, $dto->getFound());
+        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertNotNull($dto->getPerformance());
+        $this->assertEqualsCanonicalizing([], $dto->getRows());
+        $this->assertEqualsCanonicalizing($sql, $dto->getSql());
+
+        $this->assertInstanceOf(LoggerInterface::class, (new Adapter())->getLogger());
+    }
+
+    /**
+     * @throws DBALException
+     */
+    public function testExecute9()
+    {
+        $sql = new Sql();
+        $sql->sentence = "INSERT INTO {$_ENV['TABLE_TEST']} (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (:x1, :x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10);";
+        $sql->params = [
+            'x1' => 'inactive',
+            'x2' => true,
+            'x3' => 'TEST',
+            'x4' => 'TEST',
+            'x5' => '2020-02-20 18:53:16',
+            'x6' => null,
+            'x7' => 0,
+            'x8' => null,
+            'x9' => null,
+            'x10' => 'TEST'
+        ];
+
+        $adapter = new Adapter();
+
+        $logger = new Logger('orm-dbal');
+        $logger->pushProcessor(new UidProcessor());
+        $logger->pushProcessor(new MemoryUsageProcessor());
+        $logger->pushProcessor(new IntrospectionProcessor());
+        $handler = new StreamHandler('php://stdout', Logger::DEBUG);
+        $logger->pushHandler($handler);
+
+        $adapter->setLogger($logger);
+        $this->assertInstanceOf(LoggerInterface::class, $adapter->getLogger());
+
+        $executer = new QueryExecute($adapter);
+
+        $this->assertNull($executer->getLogger());
+
+        $executer->setLogger($logger);
+
+        $this->assertNotNull($executer->getLogger());
+        $this->assertInstanceOf(LoggerInterface::class,$executer->getLogger());
+
+        $dto = $executer->executeNonQuery(IAdapter::CREATE, $sql);
+
+        $this->assertInstanceOf(IQueryDTO::class, $dto);
+        $this->assertIsString($dto->getAffectedRows());
+        $this->assertEqualsCanonicalizing(0, $dto->getCount());
+        $this->assertEqualsCanonicalizing(0, $dto->getFound());
+        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertNotNull($dto->getPerformance());
+        $this->assertEqualsCanonicalizing([], $dto->getRows());
+        $this->assertEqualsCanonicalizing($sql, $dto->getSql());
+        $this->assertInstanceOf(LoggerInterface::class, $executer->getLogger());
+        $this->assertInstanceOf(IAdapter::class, $executer->getAdapter());
     }
 }

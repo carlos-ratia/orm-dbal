@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Cratia\ORM\DBAL;
 
 
+use Cratia\ORM\DBAL\Interfaces\IAdapter;
 use Cratia\ORM\DBAL\QueryDTO;
 use Cratia\ORM\DQL\Interfaces\ISql;
 use Cratia\ORM\DQL\Sql;
@@ -25,6 +26,7 @@ class QueryDTOTest extends PHPUnit_TestCase
         $dto->setFound(count($rows));
         $dto->setRows($rows);
         $dto->setSql($sql);
+        $dto->setKing(IAdapter::FETCH);
 
         $this->assertEqualsCanonicalizing($rows, $dto->getRows());
         $this->assertEquals(count($rows), $dto->getFound());
@@ -34,7 +36,7 @@ class QueryDTOTest extends PHPUnit_TestCase
         $this->assertEmpty($dto->getAffectedRows());
 
         $this->assertEqualsCanonicalizing(
-            '{"found":6,"sql":{"sentence":"SELECT SQL_CALC_FOUND_ROWS t.* FROM analytics_dimension_entity AS t LIMIT 20 OFFSET 0","params":[]},"performance":null}',
+            '{"king":"IAdapter::FETCH","found":6,"affectedRows":0,"sql":"SELECT SQL_CALC_FOUND_ROWS t.* FROM analytics_dimension_entity AS t LIMIT 20 OFFSET 0","performance":null}',
             json_encode($dto)
         );
 
@@ -42,8 +44,8 @@ class QueryDTOTest extends PHPUnit_TestCase
 
         $this->assertNotNull($dto->getPerformance());
 
-        $this->assertEqualsCanonicalizing(
-            '{"found":6,"sql":{"sentence":"SELECT SQL_CALC_FOUND_ROWS t.* FROM analytics_dimension_entity AS t LIMIT 20 OFFSET 0","params":[]},"performance":{"runtime":"1 ms","memory":"5 MB"}}',
+        $this->assertStringContainsString(
+            '{"king":"IAdapter::FETCH","found":6,"affectedRows":0,"sql":"SELECT SQL_CALC_FOUND_ROWS t.* FROM analytics_dimension_entity AS t LIMIT 20 OFFSET 0","performance":',
             json_encode($dto)
         );
 

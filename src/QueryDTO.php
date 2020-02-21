@@ -43,6 +43,11 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     private $affectedRows;
 
     /**
+     * @var string
+     */
+    private $king;
+
+    /**
      * QueryDTO constructor.
      */
     public function __construct()
@@ -51,6 +56,8 @@ class QueryDTO implements IQueryDTO, JsonSerializable
         $this->rows = [];
         $this->sql = new Sql();
         $this->performance = null;
+        $this->affectedRows = 0;
+        $this->king = '';
     }
 
     /**
@@ -173,6 +180,24 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     }
 
     /**
+     * @return string
+     */
+    public function getKing(): string
+    {
+        return $this->king;
+    }
+
+    /**
+     * @param string $king
+     * @return QueryDTO
+     */
+    public function setKing(string $king): IQueryDTO
+    {
+        $this->king = $king;
+        return $this;
+    }
+
+    /**
      * Specify data which should be serialized to JSON
      * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
      * @return mixed data which can be serialized by <b>json_encode</b>,
@@ -183,8 +208,10 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     {
         return
             [
+                'king' => $this->getKing(),
                 'found' => $this->getFound(),
-                'sql' => $this->getSql(),
+                'affectedRows' => $this->getAffectedRows(),
+                'sql' => Functions::formatSql($this->getSql()->getSentence(), $this->getSql()->getParams()),
                 'performance' => $this->getPerformance()
             ];
     }
