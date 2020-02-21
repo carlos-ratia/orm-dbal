@@ -42,19 +42,20 @@ class QueryExecute
      * @param IQuery $query
      * @return IQueryDTO
      */
-    public function execute(IQuery $query): IQueryDTO
+    public function executeQuery(IQuery $query): IQueryDTO
     {
+        $time = -microtime(true);
         /** @var ISql $sql */
         $sql = $query->toSQL();
         return Pipeline::try(
             function () use ($sql) {
-                return $this->executeQuery($sql);
+                return $this->_executeQuery($sql);
             })
             ->then(function (array $rawRows) use ($query) {
                 return $this->completeRawRows($rawRows, $query);
             })
-            ->then(function (array $rows) use ($sql) {
-                return $this->createDTO($rows, $sql);
+            ->then(function (array $rows) use ($time, $sql) {
+                return $this->createDTO($rows, $sql, $time);
             })
             ->then(function (IQueryDTO $dto) use ($query) {
                 return $this->getFoundRows($dto, $query);
@@ -76,7 +77,7 @@ class QueryExecute
      * @return array
      * @throws DBALException
      */
-    protected function executeQuery(ISql $sql): array
+    protected function _executeQuery(ISql $sql): array
     {
         try {
             return $this->getAdapter()->query($sql->getSentence(), $sql->getParams());
@@ -132,13 +133,18 @@ class QueryExecute
     /**
      * @param array $rows
      * @param ISql $sql
+     * @param float $time
+     * @param string|int $affectedRows
      * @return IQueryDTO
      */
-    protected function createDTO(array $rows, ISql $sql): IQueryDTO
+    protected function createDTO(array $rows, ISql $sql, float $time, $affectedRows = ''): IQueryDTO
     {
         $dto = new QueryDTO();
-        $dto->setRows($rows)
-            ->setSql($sql);
+        $dto
+            ->setRows($rows)
+            ->setSql($sql)
+            ->calculatePerformance($time)
+            ->setAffectedRows($affectedRows);
         return $dto;
     }
 
@@ -154,9 +160,58 @@ class QueryExecute
             $sql = new Sql();
             $sql->sentence = "SELECT FOUND_ROWS() AS found";
             $sql->params = [];
-            $result = $this->executeQuery($sql);
+            $result = $this->_executeQuery($sql);
             $dto->setFound(intval(array_pop($result)['found']));
         }
         return $dto;
+    }
+
+    /**
+     * @param string $king
+     * @param ISql $sql
+     * @return IQueryDTO
+     * @throws DBALException
+     * @throws Exception
+     */
+    public function executeNonQuery(string $king, ISql $sql): IQueryDTO
+    {
+        $time = -microtime(true);
+        return Pipeline::try(
+            function () use ($king, $sql) {
+                return $this->_executeNonQuery($king, $sql);
+            })
+            ->then(function ($affectedRows) use ($time, $sql) {
+                return $this->createDTO([], $sql, $time, $affectedRows);
+            })
+            ->then(function (IQueryDTO $dto) {
+                return $dto;
+            })
+            ->catch(function (DBALException $e) {
+                throw $e;
+            })
+            ->catch(function (Exception $e) {
+                throw $e;
+            })
+        ();
+    }
+
+    /**
+     * @param string $king
+     * @param ISql $sql
+     * @return int|string
+     * @throws DBALException
+     */
+    protected function _executeNonQuery(string $king, ISql $sql)
+    {
+        try {
+            $affectedRows = $this->getAdapter()->nonQuery($sql->getSentence(), $sql->getParams());
+            if ($king === IAdapter::CREATE) {
+                $affectedRows = $this->getAdapter()->lastInsertId();
+            }
+        } catch (Exception $_e) {
+            $e = new DBALException($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
+            throw $e;
+        }
+        return $affectedRows;
     }
 }

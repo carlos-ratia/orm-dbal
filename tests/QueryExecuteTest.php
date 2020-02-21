@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Cratia\ORM\DBAL;
 
 
+use Cratia\ORM\DBAL\Interfaces\IAdapter;
+use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
+use Cratia\ORM\DBAL\Interfaces\IQueryPerformance;
 use Cratia\ORM\DBAL\QueryExecute;
 use Cratia\ORM\DQL\Field;
 use Cratia\ORM\DQL\Query;
@@ -32,12 +35,13 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $sql->params = [];
         $this->assertEquals($sql, $query->toSQL());
 
-        $dto = (new QueryExecute(new Adapter()))->execute($query);;
+        $dto = (new QueryExecute(new Adapter()))->executeQuery($query);;
         $this->assertEquals(20, $dto->getCount());
         $this->assertEquals(20, count($dto->getRows()));
         $this->assertIsArray($dto->getRows());
         $this->assertEquals($sql, $dto->getSql());
         $this->assertFalse($dto->isEmpty());
+        $this->assertNotNull($dto->getPerformance());
     }
 
     /**
@@ -61,10 +65,11 @@ class QueryExecuteTest extends PHPUnit_TestCase
             ->addField($field11)
             ->setLimit(1);
 
-        $dto = (new QueryExecute(new Adapter()))->execute($query);;
+        $dto = (new QueryExecute(new Adapter()))->executeQuery($query);;
         $this->assertEquals(1, $dto->getCount());
         $this->assertEquals(1, count($dto->getRows()));
         $this->assertIsArray($dto->getRows());
+        $this->assertNotNull($dto->getPerformance());
     }
 
     /**
@@ -90,7 +95,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
             ->addField($field11)
             ->setLimit(1);
 
-        (new QueryExecute(new Adapter()))->execute($query);
+        (new QueryExecute(new Adapter()))->executeQuery($query);
     }
 
 
@@ -114,6 +119,52 @@ class QueryExecuteTest extends PHPUnit_TestCase
             ->addField($field11)
             ->setLimit(1);
 
-        (new QueryExecute(new Adapter()))->execute($query);
+        (new QueryExecute(new Adapter()))->executeQuery($query);
+    }
+
+    public function testExecute5()
+    {
+        $sql = new Sql();
+        $sql->sentence = "INSERT INTO {$_ENV['TABLE_TEST']} (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        $sql->params = ['inactive', 1, 'TEST', 'TEST', '2020-02-20 18:53:16', null, 0, null, null, 'TEST'];
+
+        $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
+
+        $this->assertInstanceOf(IQueryDTO::class, $dto);
+        $this->assertIsString($dto->getAffectedRows());
+        $this->assertEqualsCanonicalizing(0, $dto->getCount());
+        $this->assertEqualsCanonicalizing(0, $dto->getFound());
+        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertNotNull($dto->getPerformance());
+        $this->assertEqualsCanonicalizing([], $dto->getRows());
+        $this->assertEqualsCanonicalizing($sql, $dto->getSql());
+    }
+
+    public function testExecute6()
+    {
+        $this->expectException(DBALException::class);
+        $sql = new Sql();
+        $sql->sentence = "INSERT INTO (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        $sql->params = ['inactive', 1, 'TEST', 'TEST', '2020-02-20 18:53:16', null, 0, null, null, 'TEST'];
+
+        (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
+    }
+
+    public function testExecute7()
+    {
+        $sql = new Sql();
+        $sql->sentence = "UPDATE {$_ENV['TABLE_TEST']} SET status = ?, id_connection = ? WHERE id = 1";
+        $sql->params = ['inactive', 1];
+
+        $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::UPDATE, $sql);
+
+        $this->assertInstanceOf(IQueryDTO::class, $dto);
+        $this->assertIsInt($dto->getAffectedRows());
+        $this->assertEqualsCanonicalizing(0, $dto->getCount());
+        $this->assertEqualsCanonicalizing(0, $dto->getFound());
+        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertNotNull($dto->getPerformance());
+        $this->assertEqualsCanonicalizing([], $dto->getRows());
+        $this->assertEqualsCanonicalizing($sql, $dto->getSql());
     }
 }

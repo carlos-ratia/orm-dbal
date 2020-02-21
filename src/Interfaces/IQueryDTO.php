@@ -54,4 +54,32 @@ interface IQueryDTO
      * @return bool
      */
     public function isEmpty(): bool;
+
+    /**
+     * @return IQueryPerformance|null
+     */
+    public function getPerformance(): ?IQueryPerformance;
+
+    /**
+     * @param IQueryPerformance $performance
+     * @return IQueryDTO
+     */
+    public function setPerformance(IQueryPerformance $performance): IQueryDTO;
+
+    /**
+     * @param float $time
+     * @return IQueryDTO
+     */
+    public function calculatePerformance(float $time): IQueryDTO;
+
+    /**
+     * @param int|string $affectedRows
+     * @return mixed
+     */
+    public function setAffectedRows($affectedRows): IQueryDTO;
+
+    /**
+     * @return int|string
+     */
+    public function getAffectedRows();
 }

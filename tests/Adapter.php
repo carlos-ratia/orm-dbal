@@ -6,10 +6,8 @@ namespace Tests\Cratia\ORM\DBAL;
 
 
 use Cratia\ORM\DBAL\Interfaces\IAdapter;
-use Doctrine\DBAL\Connection;
+use Cratia\ORM\DBAL\MysqlAdapter;
 use Doctrine\DBAL\DBALException;
-use Doctrine\DBAL\DriverManager;
-use Doctrine\DBAL\FetchMode;
 
 /**
  * Class Adapter
@@ -18,9 +16,9 @@ use Doctrine\DBAL\FetchMode;
 class Adapter implements IAdapter
 {
     /**
-     * @var Connection
+     * @var MysqlAdapter
      */
-    private $connection;
+    private $adapter;
 
     /**
      * Adapter constructor.
@@ -36,15 +34,7 @@ class Adapter implements IAdapter
             'driver' => 'pdo_mysql',
             'charset' => $_ENV['DB_CHARSET']
         );
-        $this->connection = DriverManager::getConnection($connectionParams);
-    }
-
-    /**
-     * @return Connection
-     */
-    public function getConnection(): Connection
-    {
-        return $this->connection;
+        $this->adapter = new MysqlAdapter($connectionParams);
     }
 
     /**
@@ -57,10 +47,7 @@ class Adapter implements IAdapter
     public function query(string $sentence, array $params = [], array $types = []): array
     {
         $sentence = trim($sentence);
-        return $this
-            ->getConnection()
-            ->executeQuery($sentence, $params, $types)
-            ->fetchAll(FetchMode::ASSOCIATIVE);
+        return $this->adapter->query($sentence, $params, $types);
     }
 
     /**
@@ -73,7 +60,7 @@ class Adapter implements IAdapter
     public function nonQuery(string $sentence, array $params = [], array $types = []): int
     {
         $sentence = trim($sentence);
-        $affectedRows = $this->getConnection()->executeUpdate($sentence, $params, $types);
+        $affectedRows = $this->adapter->nonQuery($sentence, $params, $types);
         return $affectedRows;
     }
 
@@ -82,6 +69,6 @@ class Adapter implements IAdapter
      */
     public function lastInsertId(): string
     {
-        return $this->getConnection()->lastInsertId();
+        return $this->adapter->lastInsertId();
     }
 }

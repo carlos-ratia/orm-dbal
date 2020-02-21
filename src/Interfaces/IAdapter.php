@@ -12,6 +12,10 @@ use Doctrine\DBAL\DBALException;
  */
 interface IAdapter
 {
+    const CREATE = 'IAdapter::CREATE';
+    const UPDATE = 'IAdapter::UPDATE';
+    const DELETE = 'IAdapter::DELETE';
+
     /**
      * @param string $sentence
      * @param array $params
