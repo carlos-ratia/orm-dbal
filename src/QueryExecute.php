@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Cratia\ORM\DBAL;
 
 
+use Cratia\ORM\DBAL\Events\QueryExecute\Events;
+use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteAfter;
+use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteBefore;
+use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteError;
 use Cratia\ORM\DBAL\Interfaces\IAdapter;
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
 use Cratia\ORM\DQL\Interfaces\IField;
@@ -12,6 +16,8 @@ use Cratia\ORM\DQL\Interfaces\IQuery;
 use Cratia\ORM\DQL\Interfaces\ISql;
 use Cratia\ORM\DQL\Sql;
 use Cratia\Pipeline;
+use Doctrine\Common\EventArgs;
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\DBALException;
 use Exception;
 use Psr\Log\LoggerInterface;
@@ -31,10 +37,22 @@ class QueryExecute
      */
     private $logger;
 
-    public function __construct(IAdapter $adapter, LoggerInterface $logger = null)
+    /**
+     * @var EventManager|null
+     */
+    private $eventManager;
+
+    /**
+     * QueryExecute constructor.
+     * @param IAdapter $adapter
+     * @param LoggerInterface|null $logger
+     * @param EventManager|null $eventManager
+     */
+    public function __construct(IAdapter $adapter, ?LoggerInterface $logger = null, ?EventManager $eventManager = null)
     {
         $this->adapter = $adapter;
         $this->logger = $logger;
+        $this->eventManager = $eventManager;
     }
 
     /**
@@ -64,6 +82,24 @@ class QueryExecute
     }
 
     /**
+     * @return EventManager|null
+     */
+    public function getEventManager(): ?EventManager
+    {
+        return $this->eventManager;
+    }
+
+    /**
+     * @param EventManager|null $eventManager
+     * @return QueryExecute
+     */
+    public function setEventManager(?EventManager $eventManager): QueryExecute
+    {
+        $this->eventManager = $eventManager;
+        return $this;
+    }
+
+    /**
      * @param IQuery $query
      * @return IQueryDTO
      */
@@ -73,7 +109,12 @@ class QueryExecute
         /** @var ISql $sql */
         $sql = $query->toSQL();
         return Pipeline::try(
-            function () use ($sql) {
+            function () {
+            })
+            ->tap(function () use ($sql) {
+                $this->notify(Events::ON_BEFORE_EXECUTE_QUERY, new QueryExecuteBefore($sql));
+            })
+            ->then(function () use ($sql) {
                 return $this->_executeQuery($sql);
             })
             ->then(function (array $rawRows) use ($query) {
@@ -90,6 +131,15 @@ class QueryExecute
             })
             ->tap(function (IQueryDTO $dto) {
                 $this->log($dto);
+            })
+            ->tap(function (IQueryDTO $dto) {
+                $this->notify(Events::ON_AFTER_EXECUTE_QUERY, new QueryExecuteAfter($dto));
+            })
+            ->tapCatch(function (DBALException $e) {
+                $this->notify(Events::ON_ERROR, new QueryExecuteError($e));
+            })
+            ->tapCatch(function (Exception $e) {
+                $this->notify(Events::ON_ERROR, new QueryExecuteError($e));
             })
             ->catch(function (DBALException $e) {
                 throw $e;
@@ -110,8 +160,7 @@ class QueryExecute
         try {
             return $this->getAdapter()->query($sql->getSentence(), $sql->getParams());
         } catch (Exception $_e) {
-            $e = new DBALException($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
-            throw $e;
+            throw new DBALException($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
         }
     }
 
@@ -173,7 +222,7 @@ class QueryExecute
             ->setKing($king)
             ->setRows($rows)
             ->setSql($sql)
-            ->calculatePerformance($time)
+            ->calculatePerformance($time + microtime(true))
             ->setAffectedRows($affectedRows);
         return $dto;
     }
@@ -207,7 +256,12 @@ class QueryExecute
     {
         $time = -microtime(true);
         return Pipeline::try(
-            function () use ($king, $sql) {
+            function () {
+            })
+            ->tap(function () use ($sql) {
+                $this->notify(Events::ON_BEFORE_EXECUTE_NON_QUERY, new QueryExecuteBefore($sql));
+            })
+            ->then(function () use ($king, $sql) {
                 return $this->_executeNonQuery($king, $sql);
             })
             ->then(function ($affectedRows) use ($king, $time, $sql) {
@@ -218,6 +272,15 @@ class QueryExecute
             })
             ->tap(function (IQueryDTO $dto) {
                 $this->log($dto);
+            })
+            ->tap(function (IQueryDTO $dto) {
+                $this->notify(Events::ON_AFTER_EXECUTE_NON_QUERY, new QueryExecuteAfter($dto));
+            })
+            ->tapCatch(function (DBALException $e) {
+                $this->notify(Events::ON_ERROR, new QueryExecuteError($e));
+            })
+            ->tapCatch(function (Exception $e) {
+                $this->notify(Events::ON_ERROR, new QueryExecuteError($e));
             })
             ->catch(function (DBALException $e) {
                 throw $e;
@@ -259,5 +322,21 @@ class QueryExecute
         ) {
             $logger->info(json_encode($dto));
         }
+    }
+
+    /**
+     * @param string $eventName
+     * @param EventArgs $event
+     * @return $this
+     */
+    protected function notify(string $eventName, EventArgs $event)
+    {
+        if (
+            !is_null($eventManager = $this->getEventManager()) &&
+            ($eventManager instanceof EventManager)
+        ) {
+            $eventManager->dispatchEvent($eventName, $event);
+        }
+        return $this;
     }
 }

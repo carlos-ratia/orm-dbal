@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cratia\ORM\DBAL;
 
+use Cratia\ORM\DBAL\Common\Functions;
 use Cratia\ORM\DBAL\Interfaces\IQueryPerformance;
 use JsonSerializable;
 
@@ -13,21 +14,30 @@ use JsonSerializable;
  */
 class QueryPerformance implements IQueryPerformance, JsonSerializable
 {
-    /** @var string */
+    /**
+     * @var string
+     */
     private $runtime;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     private $memory;
 
     /**
-     * QueryPerformance constructor.
-     * @param string $runtime
-     * @param string $memory
+     * @var float
      */
-    public function __construct(string $runtime, string $memory)
+    private $time;
+
+    /**
+     * QueryPerformance constructor.
+     * @param float $time
+     */
+    public function __construct(float $time)
     {
-        $this->runtime = $runtime;
-        $this->memory = $memory;
+        $this->time = $time;
+        $this->runtime = Functions::pettyRunTime($time);
+        $this->memory = intval(memory_get_usage() / 1024 / 1024) . ' MB';
     }
 
     /**
@@ -46,6 +56,13 @@ class QueryPerformance implements IQueryPerformance, JsonSerializable
         return $this->memory;
     }
 
+    /**
+     * @return float
+     */
+    public function getTime(): float
+    {
+        return $this->time;
+    }
 
     /**
      * Specify data which should be serialized to JSON

@@ -70,7 +70,7 @@ class QueryDTO implements IQueryDTO, JsonSerializable
 
     /**
      * @param int $found
-     * @return QueryDTO
+     * @return IQueryDTO
      */
     public function setFound(int $found): IQueryDTO
     {
@@ -154,10 +154,7 @@ class QueryDTO implements IQueryDTO, JsonSerializable
      */
     public function calculatePerformance(float $time): IQueryDTO
     {
-        $time += microtime(true);
-        $time = Functions::pettyRunTime($time);
-        $memory = intval(memory_get_usage() / 1024 / 1024) . ' MB';
-        $this->setPerformance(new QueryPerformance($time, $memory));
+        $this->setPerformance(new QueryPerformance($time));
         return $this;
     }
 

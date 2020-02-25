@@ -6,7 +6,14 @@ namespace Cratia\ORM\DBAL;
 
 
 use Cratia\ORM\DBAL\Common\Functions;
+use Cratia\ORM\DBAL\Events\Adapter\Events;
+use Cratia\ORM\DBAL\Events\Adapter\QueryAfter;
+use Cratia\ORM\DBAL\Events\Adapter\QueryBefore;
+use Cratia\ORM\DBAL\Events\Adapter\QueryError;
 use Cratia\ORM\DBAL\Interfaces\IAdapter;
+use Cratia\ORM\DBAL\Interfaces\IQueryPerformance;
+use Doctrine\Common\EventArgs;
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\DriverManager;
@@ -33,15 +40,22 @@ class MysqlAdapter implements IAdapter
     private $logger;
 
     /**
+     * @var EventManager|null
+     */
+    private $eventManager;
+
+    /**
      * Adapter constructor.
      * @param array $params
      * @param LoggerInterface|null $logger
+     * @param EventManager|null $eventManager
      * @throws DBALException
      */
-    public function __construct(array $params, LoggerInterface $logger = null)
+    public function __construct(array $params, ?LoggerInterface $logger = null, ?EventManager $eventManager = null)
     {
         $this->connection = DriverManager::getConnection($params);
         $this->logger = $logger;
+        $this->eventManager = $eventManager;
     }
 
     /**
@@ -54,9 +68,9 @@ class MysqlAdapter implements IAdapter
 
     /**
      * @param LoggerInterface $logger
-     * @return MysqlAdapter
+     * @return IAdapter
      */
-    public function setLogger(LoggerInterface $logger): MysqlAdapter
+    public function setLogger(LoggerInterface $logger): IAdapter
     {
         $this->logger = $logger;
         return $this;
@@ -71,6 +85,24 @@ class MysqlAdapter implements IAdapter
     }
 
     /**
+     * @param EventManager $eventManager
+     * @return IAdapter
+     */
+    public function setEventManager(EventManager $eventManager): IAdapter
+    {
+        $this->eventManager = $eventManager;
+        return $this;
+    }
+
+    /**
+     * @return EventManager|null
+     */
+    public function getEventManager(): ?EventManager
+    {
+        return $this->eventManager;
+    }
+
+    /**
      * @param string $sentence
      * @param array $params
      * @param array $types
@@ -80,6 +112,11 @@ class MysqlAdapter implements IAdapter
     public function query(string $sentence, array $params = [], array $types = []): array
     {
         $sentence = trim($sentence);
+
+        $this->notify(
+            Events::ON_BEFORE_QUERY,
+            new QueryBefore($sentence, $params, $types)
+        );
 
         try {
             $time = -microtime(true);
@@ -92,10 +129,17 @@ class MysqlAdapter implements IAdapter
             $time += microtime(true);
             $this->logPerformance($sentence, $params, $time);
         } catch (Exception $_e) {
-            $this->logError(__METHOD__, $_e);
             $e = new DBALException($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
+            $this->logError(__METHOD__, $e);
+            $this->notify(Events::ON_ERROR, new QueryError($e));
             throw $e;
         }
+
+        $this->notify(
+            Events::ON_AFTER_QUERY,
+            new QueryAfter($sentence, $params, $types, $result, $this->calculatePerformance($time))
+        );
+
         return $result;
     }
 
@@ -109,6 +153,12 @@ class MysqlAdapter implements IAdapter
     public function nonQuery(string $sentence, array $params = [], array $types = []): int
     {
         $sentence = trim($sentence);
+
+        $this->notify(
+            Events::ON_BEFORE_NON_QUERY,
+            new QueryBefore($sentence, $params, $types)
+        );
+
         try {
             $time = -microtime(true);
 
@@ -117,10 +167,17 @@ class MysqlAdapter implements IAdapter
             $time += microtime(true);
             $this->logPerformance($sentence, $params, $time);
         } catch (Exception $_e) {
-            $this->logError(__METHOD__, $_e);
             $e = new DBALException($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
+            $this->logError(__METHOD__, $e);
+            $this->notify(Events::ON_ERROR, new QueryError($e));
             throw $e;
         }
+
+        $this->notify(
+            Events::ON_AFTER_NON_QUERY,
+            new QueryAfter($sentence, $params, $types, ['affectedRows' => $affectedRows], $this->calculatePerformance($time))
+        );
+
         return $affectedRows;
     }
 
@@ -137,13 +194,23 @@ class MysqlAdapter implements IAdapter
      * @param array $params
      * @param float $time
      */
-    private function logPerformance(string $sentence, array $params, float $time): void
+    protected function logPerformance(string $sentence, array $params, float $time): void
     {
+        $_performance = $this->calculatePerformance($time);
         $performance = new stdClass;
         $performance->sql = Functions::formatSql($sentence, $params);
-        $performance->run_time = Functions::pettyRunTime($time);
-        $performance->memmory = intval(memory_get_usage() / 1024 / 1024) . ' MB';
-        $this->logDebug(json_encode($performance));
+        $performance->run_time = $_performance->getRuntime();
+        $performance->memmory = $_performance->getMemory();
+        $this->logInfo(json_encode($performance));
+    }
+
+    /**
+     * @param float $time
+     * @return IQueryPerformance
+     */
+    protected function calculatePerformance(float $time): IQueryPerformance
+    {
+        return new QueryPerformance($time);
     }
 
     /**
@@ -172,8 +239,24 @@ class MysqlAdapter implements IAdapter
     /**
      * @param string $message
      */
-    protected function logDebug(string $message): void
+    protected function logInfo(string $message): void
     {
-        $this->log(LogLevel::DEBUG, $message);
+        $this->log(LogLevel::INFO, $message);
+    }
+
+    /**
+     * @param string $eventName
+     * @param EventArgs $event
+     * @return $this
+     */
+    protected function notify(string $eventName, EventArgs $event)
+    {
+        if (
+            !is_null($eventManager = $this->getEventManager()) &&
+            ($eventManager instanceof EventManager)
+        ) {
+            $eventManager->dispatchEvent($eventName, $event);
+        }
+        return $this;
     }
 }
