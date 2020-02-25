@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cratia\ORM\DBAL\Interfaces;
 
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\DBALException;
 use Psr\Log\LoggerInterface;
 
@@ -45,4 +46,9 @@ interface IAdapter
      * @return LoggerInterface|null
      */
     public function getLogger(): ?LoggerInterface;
+
+    /**
+     * @return EventManager|null
+     */
+    public function getEventManager(): ?EventManager;
 }
