@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace Cratia\ORM\DBAL\Events\QueryExecute;
+namespace Cratia\ORM\DBAL\Events\Payloads;
 
 
 use Doctrine\Common\EventArgs;
@@ -10,10 +10,10 @@ use Doctrine\DBAL\DBALException;
 use Exception;
 
 /**
- * Class QueryExecuteError
- * @package Cratia\ORM\DBAL\Events\QueryExecute
+ * Class EventQueryExecuteErrorPayload
+ * @package Cratia\ORM\DBAL\Events\Payloads
  */
-class QueryExecuteError extends EventArgs
+class EventQueryExecuteErrorPayload extends EventArgs
 {
     /**
      * @var Exception|DBALException

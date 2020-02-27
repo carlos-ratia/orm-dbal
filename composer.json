@@ -8,12 +8,16 @@
         "doctrine/dbal": "^2.10",
         "php": ">=7.1",
         "ext-json": "*",
-        "psr/log": "^1.1"
+        "psr/log": "^1.1",
+        "cratia/interface-adapter": ">=0.1",
+        "cratia/common-functions": ">=0.1",
+        "cratia/adapter-sql-performance": ">=0.1"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",
         "symfony/dotenv": "^5.0",
-        "monolog/monolog": "^2.0"
+        "monolog/monolog": "^2.0",
+        "cratia/adapter-mysql": ">=0.2"
     },
     "license": "MIT",
     "authors": [
@@ -27,7 +31,7 @@
             "src/"
         ],
         "psr-4": {
-            "Cratia\\ORM\\": "src/"
+            "Cratia\\ORM\\DBAL\\": "src/"
         }
     },
     "autoload-dev": {
@@ -35,7 +39,7 @@
             "tests/"
         ],
         "psr-4": {
-            "Tests\\Cratia\\ORM\\": "tests/"
+            "Tests\\Cratia\\ORM\\DBAL\\": "tests/"
         }
     },
     "minimum-stability": "stable",

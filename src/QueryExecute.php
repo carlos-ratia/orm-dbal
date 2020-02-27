@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Cratia\ORM\DBAL;
 
 
-use Cratia\ORM\DBAL\Events\QueryExecute\Events;
-use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteAfter;
-use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteBefore;
-use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteError;
-use Cratia\ORM\DBAL\Interfaces\IAdapter;
+use Cratia\ORM\DBAL\Adapter\Interfaces\IAdapter;
+use Cratia\ORM\DBAL\Events\Events;
+use Cratia\ORM\DBAL\Events\Payloads\EventQueryExecuteAfterPayload;
+use Cratia\ORM\DBAL\Events\Payloads\EventQueryExecuteBeforePayload;
+use Cratia\ORM\DBAL\Events\Payloads\EventQueryExecuteErrorPayload;
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
 use Cratia\ORM\DQL\Interfaces\IField;
 use Cratia\ORM\DQL\Interfaces\IQuery;
@@ -112,7 +112,7 @@ class QueryExecute
             function () {
             })
             ->tap(function () use ($sql) {
-                $this->notify(Events::ON_BEFORE_EXECUTE_QUERY, new QueryExecuteBefore($sql));
+                $this->notify(Events::ON_BEFORE_EXECUTE_QUERY, new EventQueryExecuteBeforePayload($sql));
             })
             ->then(function () use ($sql) {
                 return $this->_executeQuery($sql);
@@ -124,7 +124,7 @@ class QueryExecute
                 return $this->createDTO(IAdapter::FETCH, $rows, $sql, $time);
             })
             ->then(function (IQueryDTO $dto) use ($query) {
-                return $this->getFoundRows($dto, $query);
+                return $this->resolveFoundRows($dto, $query);
             })
             ->then(function (IQueryDTO $dto) use ($query) {
                 return $dto;
@@ -133,13 +133,13 @@ class QueryExecute
                 $this->log($dto);
             })
             ->tap(function (IQueryDTO $dto) {
-                $this->notify(Events::ON_AFTER_EXECUTE_QUERY, new QueryExecuteAfter($dto));
+                $this->notify(Events::ON_AFTER_EXECUTE_QUERY, new EventQueryExecuteAfterPayload($dto));
             })
             ->tapCatch(function (DBALException $e) {
-                $this->notify(Events::ON_ERROR, new QueryExecuteError($e));
+                $this->notify(Events::ON_ERROR, new EventQueryExecuteErrorPayload($e));
             })
             ->tapCatch(function (Exception $e) {
-                $this->notify(Events::ON_ERROR, new QueryExecuteError($e));
+                $this->notify(Events::ON_ERROR, new EventQueryExecuteErrorPayload($e));
             })
             ->catch(function (DBALException $e) {
                 throw $e;
@@ -200,8 +200,7 @@ class QueryExecute
                 }
             }
         } catch (Exception $_e) {
-            $e = new Exception($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
-            throw $e;
+            throw new Exception($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
         }
 
         return $rows;
@@ -219,11 +218,11 @@ class QueryExecute
     {
         $dto = new QueryDTO();
         $dto
-            ->setKing($king)
+            ->setKind($king)
             ->setRows($rows)
             ->setSql($sql)
-            ->calculatePerformance($time + microtime(true))
-            ->setAffectedRows($affectedRows);
+            ->setResult($affectedRows)
+            ->calculatePerformance($time + microtime(true));
         return $dto;
     }
 
@@ -233,14 +232,14 @@ class QueryExecute
      * @return IQueryDTO
      * @throws DBALException
      */
-    protected function getFoundRows(IQueryDTO $dto, IQuery $query): IQueryDTO
+    protected function resolveFoundRows(IQueryDTO $dto, IQuery $query): IQueryDTO
     {
         if ($query->getFoundRows()) {
             $sql = new Sql();
             $sql->sentence = "SELECT FOUND_ROWS() AS found";
             $sql->params = [];
             $result = $this->_executeQuery($sql);
-            $dto->setFound(intval(array_pop($result)['found']));
+            $dto->setResult(intval(array_pop($result)['found']));
         }
         return $dto;
     }
@@ -259,7 +258,7 @@ class QueryExecute
             function () {
             })
             ->tap(function () use ($sql) {
-                $this->notify(Events::ON_BEFORE_EXECUTE_NON_QUERY, new QueryExecuteBefore($sql));
+                $this->notify(Events::ON_BEFORE_EXECUTE_NON_QUERY, new EventQueryExecuteBeforePayload($sql));
             })
             ->then(function () use ($king, $sql) {
                 return $this->_executeNonQuery($king, $sql);
@@ -274,13 +273,13 @@ class QueryExecute
                 $this->log($dto);
             })
             ->tap(function (IQueryDTO $dto) {
-                $this->notify(Events::ON_AFTER_EXECUTE_NON_QUERY, new QueryExecuteAfter($dto));
+                $this->notify(Events::ON_AFTER_EXECUTE_NON_QUERY, new EventQueryExecuteAfterPayload($dto));
             })
             ->tapCatch(function (DBALException $e) {
-                $this->notify(Events::ON_ERROR, new QueryExecuteError($e));
+                $this->notify(Events::ON_ERROR, new EventQueryExecuteErrorPayload($e));
             })
             ->tapCatch(function (Exception $e) {
-                $this->notify(Events::ON_ERROR, new QueryExecuteError($e));
+                $this->notify(Events::ON_ERROR, new EventQueryExecuteErrorPayload($e));
             })
             ->catch(function (DBALException $e) {
                 throw $e;
@@ -305,8 +304,7 @@ class QueryExecute
                 $affectedRows = $this->getAdapter()->lastInsertId();
             }
         } catch (Exception $_e) {
-            $e = new DBALException($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
-            throw $e;
+            throw new DBALException($_e->getMessage(), $_e->getCode(), $_e->getPrevious());
         }
         return $affectedRows;
     }

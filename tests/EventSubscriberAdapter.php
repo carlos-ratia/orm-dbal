@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Cratia\ORM\DBAL;
 
 
-use Cratia\ORM\DBAL\Events\Adapter\Events;
-use Cratia\ORM\DBAL\Events\Adapter\QueryAfter;
-use Cratia\ORM\DBAL\Events\Adapter\QueryBefore;
-use Cratia\ORM\DBAL\Events\Adapter\QueryError;
+use Cratia\ORM\DBAL\Adapter\Events\Events;
+use Cratia\ORM\DBAL\Adapter\Events\Payloads\EventAfterPayload;
+use Cratia\ORM\DBAL\Adapter\Events\Payloads\EventBeforePayload;
+use Cratia\ORM\DBAL\Adapter\Events\Payloads\EventErrorPayload;
 use Doctrine\Common\EventSubscriber;
 
 /**
@@ -33,27 +33,27 @@ class EventSubscriberAdapter implements EventSubscriber
 
     }
 
-    public function onError(QueryError $event)
+    public function adapterOnError(EventErrorPayload $event)
     {
         $this->onError = true;
     }
 
-    public function onAfterQuery(QueryAfter $event)
+    public function adapterOnAfterQuery(EventAfterPayload $event)
     {
         $this->onAfterQuery = true;
     }
 
-    public function onBeforeQuery(QueryBefore $event)
+    public function adapterOnBeforeQuery(EventBeforePayload $event)
     {
         $this->onBeforeQuery = true;
     }
 
-    public function onAfterNonQuery(QueryAfter $event)
+    public function adapterOnAfterNonQuery(EventAfterPayload $event)
     {
         $this->onAfterNonQuery = true;
     }
 
-    public function onBeforeNonQuery(QueryBefore $event)
+    public function adapterOnBeforeNonQuery(EventBeforePayload $event)
     {
         $this->onBeforeNonQuery = true;
     }

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Cratia\ORM\DBAL;
 
-use Cratia\ORM\DBAL\Common\Functions;
+use Cratia\Common\Functions;
+use Cratia\ORM\DBAL\Adapter\Interfaces\ISqlPerformance;
+use Cratia\ORM\DBAL\Adapter\SqlPerformance;
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
-use Cratia\ORM\DBAL\Interfaces\IQueryPerformance;
 use Cratia\ORM\DQL\Interfaces\ISql;
 use Cratia\ORM\DQL\Sql;
 use JsonSerializable;
@@ -18,9 +19,9 @@ use JsonSerializable;
 class QueryDTO implements IQueryDTO, JsonSerializable
 {
     /**
-     * @var int
+     * @var int|string|null
      */
-    private $found;
+    private $result;
 
     /**
      * @var array
@@ -33,53 +34,46 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     private $sql;
 
     /**
-     * @var IQueryPerformance|null
+     * @var |null
      */
     private $performance;
 
     /**
-     * @var int|string
+     * @var null|null
      */
-    private $affectedRows;
-
-    /**
-     * @var string
-     */
-    private $king;
+    private $kind;
 
     /**
      * QueryDTO constructor.
      */
     public function __construct()
     {
-        $this->found = 0;
-        $this->rows = [];
+        $this->kind = null;
+        $this->result = null;
         $this->sql = new Sql();
         $this->performance = null;
-        $this->affectedRows = 0;
-        $this->king = '';
+        $this->rows = [];
     }
 
     /**
-     * @return int
+     * {@inheritDoc}
      */
-    public function getFound(): int
+    public function getResult()
     {
-        return $this->found;
+        return $this->result;
     }
 
     /**
-     * @param int $found
-     * @return IQueryDTO
+     * {@inheritDoc}
      */
-    public function setFound(int $found): IQueryDTO
+    public function setResult($result): IQueryDTO
     {
-        $this->found = $found;
+        $this->result = $result;
         return $this;
     }
 
     /**
-     * @return int
+     * {@inheritDoc}
      */
     public function getCount(): int
     {
@@ -87,7 +81,7 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     }
 
     /**
-     * @return array
+     * {@inheritDoc}
      */
     public function getRows(): array
     {
@@ -95,8 +89,7 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     }
 
     /**
-     * @param array $rows
-     * @return QueryDTO
+     * {@inheritDoc}
      */
     public function setRows(array $rows): IQueryDTO
     {
@@ -105,7 +98,7 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     }
 
     /**
-     * @return ISql
+     * {@inheritDoc}
      */
     public function getSql(): ISql
     {
@@ -113,8 +106,7 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     }
 
     /**
-     * @param ISql $sql
-     * @return QueryDTO
+     * {@inheritDoc}
      */
     public function setSql(ISql $sql): IQueryDTO
     {
@@ -123,7 +115,7 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     }
 
     /**
-     * @return bool
+     * {@inheritDoc}
      */
     public function isEmpty(): bool
     {
@@ -131,18 +123,17 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     }
 
     /**
-     * @return IQueryPerformance|null
+     * {@inheritDoc}
      */
-    public function getPerformance(): ?IQueryPerformance
+    public function getPerformance(): ?ISqlPerformance
     {
         return $this->performance;
     }
 
     /**
-     * @param IQueryPerformance $performance
-     * @return IQueryDTO
+     * {@inheritDoc}
      */
-    public function setPerformance(IQueryPerformance $performance): IQueryDTO
+    public function setPerformance(ISqlPerformance $performance): IQueryDTO
     {
         $this->performance = $performance;
         return $this;
@@ -150,47 +141,28 @@ class QueryDTO implements IQueryDTO, JsonSerializable
 
     /**
      * @param float $time
-     * @return IQueryDTO
+     * @return $this
      */
     public function calculatePerformance(float $time): IQueryDTO
     {
-        $this->setPerformance(new QueryPerformance($time));
+        $this->performance = new SqlPerformance($time);
         return $this;
     }
 
     /**
-     * @return int|string
+     * {@inheritDoc}
      */
-    public function getAffectedRows()
+    public function getKind(): ?string
     {
-        return $this->affectedRows;
+        return $this->kind;
     }
 
     /**
-     * @param int|string $affectedRows
-     * @return QueryDTO
+     * {@inheritDoc}
      */
-    public function setAffectedRows($affectedRows): IQueryDTO
+    public function setKind(string $kind): IQueryDTO
     {
-        $this->affectedRows = $affectedRows;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getKing(): string
-    {
-        return $this->king;
-    }
-
-    /**
-     * @param string $king
-     * @return QueryDTO
-     */
-    public function setKing(string $king): IQueryDTO
-    {
-        $this->king = $king;
+        $this->kind = $kind;
         return $this;
     }
 
@@ -205,9 +177,8 @@ class QueryDTO implements IQueryDTO, JsonSerializable
     {
         return
             [
-                'king' => $this->getKing(),
-                'found' => $this->getFound(),
-                'affectedRows' => $this->getAffectedRows(),
+                'kind' => $this->getKind(),
+                'result' => $this->getResult(),
                 'sql' => Functions::formatSql($this->getSql()->getSentence(), $this->getSql()->getParams()),
                 'performance' => $this->getPerformance()
             ];

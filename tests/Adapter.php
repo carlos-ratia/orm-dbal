@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Cratia\ORM\DBAL;
 
 
-use Cratia\ORM\DBAL\MysqlAdapter;
+use Cratia\ORM\DBAL\Adapter\MysqlAdapter;
 use Doctrine\DBAL\DBALException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;

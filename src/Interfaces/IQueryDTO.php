@@ -4,24 +4,26 @@ declare(strict_types=1);
 
 namespace Cratia\ORM\DBAL\Interfaces;
 
+
+use Cratia\ORM\DBAL\Adapter\Interfaces\ISqlPerformance;
 use Cratia\ORM\DQL\Interfaces\ISql;
 
 /**
  * Interface IQueryDTO
- * @package Cratia\ORM\DBAL
+ * @package Cratia\ORM\DBAL\Interfaces
  */
 interface IQueryDTO
 {
     /**
-     * @return int
+     * @return mixed
      */
-    public function getFound(): int;
+    public function getResult();
 
     /**
-     * @param int $found
+     * @param mixed $result
      * @return IQueryDTO
      */
-    public function setFound(int $found): IQueryDTO;
+    public function setResult($result): IQueryDTO;
 
     /**
      * @return int
@@ -51,35 +53,18 @@ interface IQueryDTO
     public function setSql(ISql $sql): IQueryDTO;
 
     /**
+     * @return ISqlPerformance|null
+     */
+    public function getPerformance(): ?ISqlPerformance;
+
+    /**
+     * @param ISqlPerformance $performance
+     * @return IQueryDTO
+     */
+    public function setPerformance(ISqlPerformance $performance): IQueryDTO;
+
+    /**
      * @return bool
      */
     public function isEmpty(): bool;
-
-    /**
-     * @return IQueryPerformance|null
-     */
-    public function getPerformance(): ?IQueryPerformance;
-
-    /**
-     * @param IQueryPerformance $performance
-     * @return IQueryDTO
-     */
-    public function setPerformance(IQueryPerformance $performance): IQueryDTO;
-
-    /**
-     * @param float $time
-     * @return IQueryDTO
-     */
-    public function calculatePerformance(float $time): IQueryDTO;
-
-    /**
-     * @param int|string $affectedRows
-     * @return mixed
-     */
-    public function setAffectedRows($affectedRows): IQueryDTO;
-
-    /**
-     * @return int|string
-     */
-    public function getAffectedRows();
 }

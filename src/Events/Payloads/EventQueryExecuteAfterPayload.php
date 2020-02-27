@@ -2,17 +2,17 @@
 declare(strict_types=1);
 
 
-namespace Cratia\ORM\DBAL\Events\QueryExecute;
+namespace Cratia\ORM\DBAL\Events\Payloads;
 
 
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
 use Doctrine\Common\EventArgs;
 
 /**
- * Class QueryExecuteAfter
- * @package Cratia\ORM\DBAL\Events\QueryExecute
+ * Class EventQueryExecuteAfterPayload
+ * @package Cratia\ORM\DBAL\Events\Payloads
  */
-class QueryExecuteAfter extends EventArgs
+class EventQueryExecuteAfterPayload extends EventArgs
 {
     /**
      * @var IQueryDTO

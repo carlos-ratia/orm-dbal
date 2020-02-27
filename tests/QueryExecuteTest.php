@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Cratia\ORM\DBAL;
 
 
-use Cratia\ORM\DBAL\Interfaces\IAdapter;
+use Cratia\ORM\DBAL\Adapter\Interfaces\IAdapter;
+use Cratia\ORM\DBAL\Adapter\Interfaces\ISqlPerformance;
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
-use Cratia\ORM\DBAL\Interfaces\IQueryPerformance;
 use Cratia\ORM\DBAL\QueryExecute;
 use Cratia\ORM\DQL\Field;
 use Cratia\ORM\DQL\Query;
@@ -141,10 +141,10 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
-        $this->assertIsString($dto->getAffectedRows());
+        $this->assertIsString($dto->getResult());
         $this->assertEqualsCanonicalizing(0, $dto->getCount());
-        $this->assertEqualsCanonicalizing(0, $dto->getFound());
-        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertIsString($dto->getResult());
+        $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
         $this->assertEqualsCanonicalizing($sql, $dto->getSql());
@@ -172,10 +172,10 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::UPDATE, $sql);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
-        $this->assertIsInt($dto->getAffectedRows());
+        $this->assertIsInt($dto->getResult());
         $this->assertEqualsCanonicalizing(0, $dto->getCount());
-        $this->assertEqualsCanonicalizing(0, $dto->getFound());
-        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertEqualsCanonicalizing(0, $dto->getResult());
+        $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
         $this->assertEqualsCanonicalizing($sql, $dto->getSql());
@@ -204,10 +204,10 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
-        $this->assertIsString($dto->getAffectedRows());
+        $this->assertIsString($dto->getResult());
         $this->assertEqualsCanonicalizing(0, $dto->getCount());
-        $this->assertEqualsCanonicalizing(0, $dto->getFound());
-        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertIsString($dto->getResult());
+        $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
         $this->assertEqualsCanonicalizing($sql, $dto->getSql());
@@ -259,10 +259,9 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $dto = $executer->executeNonQuery(IAdapter::CREATE, $sql);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
-        $this->assertIsString($dto->getAffectedRows());
+        $this->assertIsString($dto->getResult());
         $this->assertEqualsCanonicalizing(0, $dto->getCount());
-        $this->assertEqualsCanonicalizing(0, $dto->getFound());
-        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
         $this->assertEqualsCanonicalizing($sql, $dto->getSql());
@@ -321,10 +320,9 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $dto = $executer->executeNonQuery(IAdapter::CREATE, $sql);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
-        $this->assertIsString($dto->getAffectedRows());
+        $this->assertIsString($dto->getResult());
         $this->assertEqualsCanonicalizing(0, $dto->getCount());
-        $this->assertEqualsCanonicalizing(0, $dto->getFound());
-        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
         $this->assertEqualsCanonicalizing($sql, $dto->getSql());
@@ -566,10 +564,9 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $dto = $executer->executeNonQuery(IAdapter::CREATE, $sql);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
-        $this->assertIsString($dto->getAffectedRows());
+        $this->assertIsString($dto->getResult());
         $this->assertEqualsCanonicalizing(0, $dto->getCount());
-        $this->assertEqualsCanonicalizing(0, $dto->getFound());
-        $this->assertInstanceOf(IQueryPerformance::class, $dto->getPerformance());
+        $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
         $this->assertEqualsCanonicalizing($sql, $dto->getSql());

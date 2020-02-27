@@ -1,4 +1,4 @@
 /vendor/
 /.idea
 /coverage
-.env
+.env.test

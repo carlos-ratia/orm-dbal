@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Cratia\ORM\DBAL;
 
 
-use Cratia\ORM\DBAL\Events\QueryExecute\Events;
-use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteAfter;
-use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteBefore;
-use Cratia\ORM\DBAL\Events\QueryExecute\QueryExecuteError;
+use Cratia\ORM\DBAL\Events\Events;
+use Cratia\ORM\DBAL\Events\Payloads\EventQueryExecuteAfterPayload;
+use Cratia\ORM\DBAL\Events\Payloads\EventQueryExecuteBeforePayload;
+use Cratia\ORM\DBAL\Events\Payloads\EventQueryExecuteErrorPayload;
 use Doctrine\Common\EventSubscriber;
 
 /**
@@ -32,27 +32,27 @@ class EventSubscriberQueryExecute implements EventSubscriber
         $this->onBeforeExecuteNonQuery = false;
     }
 
-    public function onError(QueryExecuteError $event)
+    public function queryExecuteOnError(EventQueryExecuteErrorPayload $event)
     {
         $this->onError = true;
     }
 
-    public function onAfterExecuteQuery(QueryExecuteAfter $event)
+    public function queryExecuteOnAfterExecuteQuery(EventQueryExecuteAfterPayload $event)
     {
         $this->onAfterExecuteQuery = true;
     }
 
-    public function onBeforeExecuteQuery(QueryExecuteBefore $event)
+    public function queryExecuteOnBeforeExecuteQuery(EventQueryExecuteBeforePayload $event)
     {
         $this->onBeforeExecuteQuery = true;
     }
 
-    public function onAfterExecuteNonQuery(QueryExecuteAfter $event)
+    public function queryExecuteOnAfterExecuteNonQuery(EventQueryExecuteAfterPayload $event)
     {
         $this->onAfterExecuteNonQuery = true;
     }
 
-    public function onBeforeExecuteNonQuery(QueryExecuteBefore $event)
+    public function queryExecuteOnBeforeExecuteNonQuery(EventQueryExecuteBeforePayload $event)
     {
         $this->onBeforeExecuteNonQuery = true;
     }
