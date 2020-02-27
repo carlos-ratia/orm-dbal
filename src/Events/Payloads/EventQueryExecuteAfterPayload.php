@@ -7,12 +7,13 @@ namespace Cratia\ORM\DBAL\Events\Payloads;
 
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
 use Doctrine\Common\EventArgs;
+use JsonSerializable;
 
 /**
  * Class EventQueryExecuteAfterPayload
  * @package Cratia\ORM\DBAL\Events\Payloads
  */
-class EventQueryExecuteAfterPayload extends EventArgs
+class EventQueryExecuteAfterPayload extends EventArgs implements JsonSerializable
 {
     /**
      * @var IQueryDTO
@@ -34,5 +35,13 @@ class EventQueryExecuteAfterPayload extends EventArgs
     public function getDto(): IQueryDTO
     {
         return $this->dto;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return ['dto' => $this->getDto()];
     }
 }

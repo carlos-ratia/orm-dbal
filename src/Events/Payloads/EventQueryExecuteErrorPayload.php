@@ -8,12 +8,13 @@ namespace Cratia\ORM\DBAL\Events\Payloads;
 use Doctrine\Common\EventArgs;
 use Doctrine\DBAL\DBALException;
 use Exception;
+use JsonSerializable;
 
 /**
  * Class EventQueryExecuteErrorPayload
  * @package Cratia\ORM\DBAL\Events\Payloads
  */
-class EventQueryExecuteErrorPayload extends EventArgs
+class EventQueryExecuteErrorPayload extends EventArgs implements JsonSerializable
 {
     /**
      * @var Exception|DBALException
@@ -37,4 +38,11 @@ class EventQueryExecuteErrorPayload extends EventArgs
         return $this->exception;
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return ['exception' => $this->getException()];
+    }
 }

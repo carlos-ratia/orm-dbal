@@ -7,12 +7,13 @@ namespace Cratia\ORM\DBAL\Events\Payloads;
 
 use Cratia\ORM\DQL\Interfaces\ISql;
 use Doctrine\Common\EventArgs;
+use JsonSerializable;
 
 /**
  * Class EventQueryExecuteBeforePayload
  * @package Cratia\ORM\DBAL\Events\Payloads
  */
-class EventQueryExecuteBeforePayload extends EventArgs
+class EventQueryExecuteBeforePayload extends EventArgs implements JsonSerializable
 {
     /**
      * @var ISql
@@ -34,5 +35,13 @@ class EventQueryExecuteBeforePayload extends EventArgs
     public function getSql(): ISql
     {
         return $this->sql;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return ['sql' => $this->getSql()];
     }
 }
