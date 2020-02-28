@@ -13,6 +13,9 @@ use Cratia\ORM\DBAL\Events\Payloads\EventQueryExecuteErrorPayload;
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
 use Cratia\ORM\DQL\Interfaces\IField;
 use Cratia\ORM\DQL\Interfaces\IQuery;
+use Cratia\ORM\DQL\Interfaces\IQueryDelete;
+use Cratia\ORM\DQL\Interfaces\IQueryInsert;
+use Cratia\ORM\DQL\Interfaces\IQueryUpdate;
 use Cratia\ORM\DQL\Interfaces\ISql;
 use Cratia\ORM\DQL\Sql;
 use Cratia\Pipeline;
@@ -246,14 +249,14 @@ class QueryExecute
 
     /**
      * @param string $king
-     * @param ISql $sql
+     * @param IQueryInsert|IQueryUpdate|IQueryDelete $query
      * @return IQueryDTO
-     * @throws DBALException
-     * @throws Exception
      */
-    public function executeNonQuery(string $king, ISql $sql): IQueryDTO
+    public function executeNonQuery(string $king, $query): IQueryDTO
     {
         $time = -microtime(true);
+        /** @var ISql $sql */
+        $sql = $query->toSQL();
         return Pipeline::try(
             function () {
             })

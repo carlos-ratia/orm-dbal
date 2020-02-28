@@ -10,7 +10,10 @@ use Cratia\ORM\DBAL\Adapter\Interfaces\ISqlPerformance;
 use Cratia\ORM\DBAL\Interfaces\IQueryDTO;
 use Cratia\ORM\DBAL\QueryExecute;
 use Cratia\ORM\DQL\Field;
+use Cratia\ORM\DQL\Filter;
 use Cratia\ORM\DQL\Query;
+use Cratia\ORM\DQL\QueryInsert;
+use Cratia\ORM\DQL\QueryUpdate;
 use Cratia\ORM\DQL\Sql;
 use Cratia\ORM\DQL\Table;
 use Doctrine\Common\EventManager;
@@ -134,11 +137,30 @@ class QueryExecuteTest extends PHPUnit_TestCase
      */
     public function testExecute5()
     {
+        $table = new Table($_ENV['TABLE_TEST']);
+        $query = new QueryInsert($table);
+
+        $query
+            ->addField(Field::column($table,'status'), 'inactive')
+            ->addField(Field::column($table,'id_connection'), 1)
+            ->addField(Field::column($table,'network_service'), 'TEST')
+            ->addField(Field::column($table,'network_params'), 'TEST')
+            ->addField(Field::column($table,'created'), '2020-02-20 18:53:16')
+            ->addField(Field::column($table,'updated'), null)
+            ->addField(Field::column($table,'disabled'), false)
+            ->addField(Field::column($table,'validity_period_to'), null)
+            ->addField(Field::column($table,'validity_period_from'), null)
+            ->addField(Field::column($table,'error_exception'), 'TEST');
+
+
         $sql = new Sql();
-        $sql->sentence = "INSERT INTO {$_ENV['TABLE_TEST']} (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        $sql->sentence = "INSERT INTO `{$_ENV['TABLE_TEST']}` (`status`,`id_connection`,`network_service`,`network_params`,`created`,`updated`,`disabled`,`validity_period_to`,`validity_period_from`,`error_exception`) VALUES (?,?,?,?,?,?,?,?,?,?)";
         $sql->params = ['inactive', 1, 'TEST', 'TEST', '2020-02-20 18:53:16', null, 0, null, null, 'TEST'];
 
-        $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
+        $this->assertEqualsCanonicalizing($sql->getSentence(), $query->toSql()->getSentence());
+        $this->assertEqualsCanonicalizing($sql->getParams(), $query->toSql()->getParams());
+
+        $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $query);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
         $this->assertIsString($dto->getResult());
@@ -147,7 +169,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
-        $this->assertEqualsCanonicalizing($sql, $dto->getSql());
+        $this->assertEqualsCanonicalizing($query->toSql(), $dto->getSql());
     }
 
     /**
@@ -156,20 +178,51 @@ class QueryExecuteTest extends PHPUnit_TestCase
     public function testExecute6()
     {
         $this->expectException(DBALException::class);
+
+        $table = new Table('');
+        $query = new QueryInsert($table);
+
+        $query
+            ->addField(Field::column($table,'status'), 'inactive')
+            ->addField(Field::column($table,'id_connection'), 1)
+            ->addField(Field::column($table,'network_service'), 'TEST')
+            ->addField(Field::column($table,'network_params'), 'TEST')
+            ->addField(Field::column($table,'created'), '2020-02-20 18:53:16')
+            ->addField(Field::column($table,'updated'), null)
+            ->addField(Field::column($table,'disabled'), false)
+            ->addField(Field::column($table,'validity_period_to'), null)
+            ->addField(Field::column($table,'validity_period_from'), null)
+            ->addField(Field::column($table,'error_exception'), 'TEST');
+
         $sql = new Sql();
-        $sql->sentence = "INSERT INTO (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (?, ?, ?, :network_params, ?, ?, ?, ?, ?, :error_exception);";
+        $sql->sentence = "INSERT INTO `` (`status`,`id_connection`,`network_service`,`network_params`,`created`,`updated`,`disabled`,`validity_period_to`,`validity_period_from`,`error_exception`) VALUES (?,?,?,?,?,?,?,?,?,?)";
         $sql->params = ['inactive', 1, 'TEST', 'TEST', '2020-02-20 18:53:16', null, 0, null, null, 'TEST'];
 
-        (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
+        $this->assertEqualsCanonicalizing($sql->getSentence(), $query->toSql()->getSentence());
+        $this->assertEqualsCanonicalizing($sql->getParams(), $query->toSql()->getParams());
+
+
+        (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $query);
     }
 
     public function testExecute7()
     {
-        $sql = new Sql();
-        $sql->sentence = "UPDATE {$_ENV['TABLE_TEST']} SET status = ?, id_connection = ? WHERE id = 1";
-        $sql->params = ['inactive', 1];
+        $table = new Table($_ENV['TABLE_TEST'], 't');
+        $query = new QueryUpdate($table);
 
-        $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::UPDATE, $sql);
+        $query
+            ->addField(Field::column($table,'status'), 'inactive')
+            ->addField(Field::column($table,'id_connection'), 1)
+            ->addFilter(Filter::eq(Field::column($table,'id'), 1));
+
+        $sql = new Sql();
+        $sql->sentence = "UPDATE {$_ENV['TABLE_TEST']} AS t SET t.status = ?,t.id_connection = ? WHERE (t.id = ?)";
+        $sql->params = ['inactive', 1, 1];
+
+        $this->assertEqualsCanonicalizing($sql->getSentence(), $query->toSql()->getSentence());
+        $this->assertEqualsCanonicalizing($sql->getParams(), $query->toSql()->getParams());
+
+        $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::UPDATE, $query);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
         $this->assertIsInt($dto->getResult());
@@ -178,41 +231,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
         $this->assertNotNull($dto->getPerformance());
         $this->assertEqualsCanonicalizing([], $dto->getRows());
-        $this->assertEqualsCanonicalizing($sql, $dto->getSql());
-    }
-
-    /**
-     * @throws DBALException
-     */
-    public function testExecute8()
-    {
-        $sql = new Sql();
-        $sql->sentence = "INSERT INTO {$_ENV['TABLE_TEST']} (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (:x1, :x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10);";
-        $sql->params = [
-            'x1' => 'inactive',
-            'x2' => true,
-            'x3' => 'TEST',
-            'x4' => 'TEST',
-            'x5' => '2020-02-20 18:53:16',
-            'x6' => null,
-            'x7' => 0,
-            'x8' => null,
-            'x9' => null,
-            'x10' => 'TEST'
-        ];
-
-        $dto = (new QueryExecute(new Adapter()))->executeNonQuery(IAdapter::CREATE, $sql);
-
-        $this->assertInstanceOf(IQueryDTO::class, $dto);
-        $this->assertIsString($dto->getResult());
-        $this->assertEqualsCanonicalizing(0, $dto->getCount());
-        $this->assertIsString($dto->getResult());
-        $this->assertInstanceOf( ISqlPerformance::class, $dto->getPerformance());
-        $this->assertNotNull($dto->getPerformance());
-        $this->assertEqualsCanonicalizing([], $dto->getRows());
-        $this->assertEqualsCanonicalizing($sql, $dto->getSql());
-
-        $this->assertInstanceOf(LoggerInterface::class, (new Adapter())->getLogger());
+        $this->assertEqualsCanonicalizing($query->toSql(), $dto->getSql());
     }
 
     /**
@@ -220,20 +239,28 @@ class QueryExecuteTest extends PHPUnit_TestCase
      */
     public function testExecute9()
     {
+        $table = new Table($_ENV['TABLE_TEST']);
+        $query = new QueryInsert($table);
+
+        $query
+            ->addField(Field::column($table,'status'), 'inactive')
+            ->addField(Field::column($table,'id_connection'), 1)
+            ->addField(Field::column($table,'network_service'), 'TEST')
+            ->addField(Field::column($table,'network_params'), 'TEST')
+            ->addField(Field::column($table,'created'), '2020-02-20 18:53:16')
+            ->addField(Field::column($table,'updated'), null)
+            ->addField(Field::column($table,'disabled'), false)
+            ->addField(Field::column($table,'validity_period_to'), null)
+            ->addField(Field::column($table,'validity_period_from'), null)
+            ->addField(Field::column($table,'error_exception'), 'TEST');
+
+
         $sql = new Sql();
-        $sql->sentence = "INSERT INTO {$_ENV['TABLE_TEST']} (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (:x1, :x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10);";
-        $sql->params = [
-            'x1' => 'inactive',
-            'x2' => true,
-            'x3' => 'TEST',
-            'x4' => 'TEST',
-            'x5' => '2020-02-20 18:53:16',
-            'x6' => null,
-            'x7' => 0,
-            'x8' => null,
-            'x9' => null,
-            'x10' => 'TEST'
-        ];
+        $sql->sentence = "INSERT INTO `{$_ENV['TABLE_TEST']}` (`status`,`id_connection`,`network_service`,`network_params`,`created`,`updated`,`disabled`,`validity_period_to`,`validity_period_from`,`error_exception`) VALUES (?,?,?,?,?,?,?,?,?,?)";
+        $sql->params = ['inactive', 1, 'TEST', 'TEST', '2020-02-20 18:53:16', null, 0, null, null, 'TEST'];
+
+        $this->assertEqualsCanonicalizing($sql->getSentence(), $query->toSql()->getSentence());
+        $this->assertEqualsCanonicalizing($sql->getParams(), $query->toSql()->getParams());
 
         $adapter = new Adapter();
 
@@ -256,7 +283,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $this->assertNotNull($executer->getLogger());
         $this->assertInstanceOf(LoggerInterface::class, $executer->getLogger());
 
-        $dto = $executer->executeNonQuery(IAdapter::CREATE, $sql);
+        $dto = $executer->executeNonQuery(IAdapter::CREATE, $query);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
         $this->assertIsString($dto->getResult());
@@ -274,20 +301,28 @@ class QueryExecuteTest extends PHPUnit_TestCase
      */
     public function testExecute10()
     {
+        $table = new Table($_ENV['TABLE_TEST']);
+        $query = new QueryInsert($table);
+
+        $query
+            ->addField(Field::column($table,'status'), 'inactive')
+            ->addField(Field::column($table,'id_connection'), 1)
+            ->addField(Field::column($table,'network_service'), 'TEST')
+            ->addField(Field::column($table,'network_params'), 'TEST')
+            ->addField(Field::column($table,'created'), '2020-02-20 18:53:16')
+            ->addField(Field::column($table,'updated'), null)
+            ->addField(Field::column($table,'disabled'), false)
+            ->addField(Field::column($table,'validity_period_to'), null)
+            ->addField(Field::column($table,'validity_period_from'), null)
+            ->addField(Field::column($table,'error_exception'), 'TEST');
+
+
         $sql = new Sql();
-        $sql->sentence = "INSERT INTO {$_ENV['TABLE_TEST']} (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (:x1, :x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10);";
-        $sql->params = [
-            'x1' => 'inactive',
-            'x2' => true,
-            'x3' => 'TEST',
-            'x4' => 'TEST',
-            'x5' => '2020-02-20 18:53:16',
-            'x6' => null,
-            'x7' => 0,
-            'x8' => null,
-            'x9' => null,
-            'x10' => 'TEST'
-        ];
+        $sql->sentence = "INSERT INTO `{$_ENV['TABLE_TEST']}` (`status`,`id_connection`,`network_service`,`network_params`,`created`,`updated`,`disabled`,`validity_period_to`,`validity_period_from`,`error_exception`) VALUES (?,?,?,?,?,?,?,?,?,?)";
+        $sql->params = ['inactive', 1, 'TEST', 'TEST', '2020-02-20 18:53:16', null, 0, null, null, 'TEST'];
+
+        $this->assertEqualsCanonicalizing($sql->getSentence(), $query->toSql()->getSentence());
+        $this->assertEqualsCanonicalizing($sql->getParams(), $query->toSql()->getParams());
 
         $adapter = new Adapter();
 
@@ -317,7 +352,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $this->assertNotNull($executer->getLogger());
         $this->assertInstanceOf(LoggerInterface::class, $executer->getLogger());
 
-        $dto = $executer->executeNonQuery(IAdapter::CREATE, $sql);
+        $dto = $executer->executeNonQuery(IAdapter::CREATE, $query);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
         $this->assertIsString($dto->getResult());
@@ -523,20 +558,28 @@ class QueryExecuteTest extends PHPUnit_TestCase
      */
     public function testExecute15()
     {
+        $table = new Table($_ENV['TABLE_TEST']);
+        $query = new QueryInsert($table);
+
+        $query
+            ->addField(Field::column($table,'status'), 'inactive')
+            ->addField(Field::column($table,'id_connection'), 1)
+            ->addField(Field::column($table,'network_service'), 'TEST')
+            ->addField(Field::column($table,'network_params'), 'TEST')
+            ->addField(Field::column($table,'created'), '2020-02-20 18:53:16')
+            ->addField(Field::column($table,'updated'), null)
+            ->addField(Field::column($table,'disabled'), false)
+            ->addField(Field::column($table,'validity_period_to'), null)
+            ->addField(Field::column($table,'validity_period_from'), null)
+            ->addField(Field::column($table,'error_exception'), 'TEST');
+
+
         $sql = new Sql();
-        $sql->sentence = "INSERT INTO {$_ENV['TABLE_TEST']} (status, id_connection, network_service, network_params, created, updated, disabled, validity_period_to, validity_period_from, error_exception) VALUES (:x1, :x2,:x3,:x4,:x5,:x6,:x7,:x8,:x9,:x10);";
-        $sql->params = [
-            'x1' => 'inactive',
-            'x2' => true,
-            'x3' => 'TEST',
-            'x4' => 'TEST',
-            'x5' => '2020-02-20 18:53:16',
-            'x6' => null,
-            'x7' => 0,
-            'x8' => null,
-            'x9' => null,
-            'x10' => 'TEST'
-        ];
+        $sql->sentence = "INSERT INTO `{$_ENV['TABLE_TEST']}` (`status`,`id_connection`,`network_service`,`network_params`,`created`,`updated`,`disabled`,`validity_period_to`,`validity_period_from`,`error_exception`) VALUES (?,?,?,?,?,?,?,?,?,?)";
+        $sql->params = ['inactive', 1, 'TEST', 'TEST', '2020-02-20 18:53:16', null, 0, null, null, 'TEST'];
+
+        $this->assertEqualsCanonicalizing($sql->getSentence(), $query->toSql()->getSentence());
+        $this->assertEqualsCanonicalizing($sql->getParams(), $query->toSql()->getParams());
 
         $adapter = new Adapter();
 
@@ -561,7 +604,7 @@ class QueryExecuteTest extends PHPUnit_TestCase
         $this->assertNotNull($executer->getEventManager());
         $this->assertInstanceOf(EventManager::class, $executer->getEventManager());
 
-        $dto = $executer->executeNonQuery(IAdapter::CREATE, $sql);
+        $dto = $executer->executeNonQuery(IAdapter::CREATE, $query);
 
         $this->assertInstanceOf(IQueryDTO::class, $dto);
         $this->assertIsString($dto->getResult());
